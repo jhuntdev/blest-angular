@@ -1,0 +1,26 @@
+# Angular generated files
+/dist/
+/node_modules/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.sublime-*
+*.swp
+
+# Logs and build artifacts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Compiled output
+/*.js
+/*.js.map
+/*.d.ts
+
+# Miscellaneous
+/.DS_Store
+.env
+.env.*
