@@ -16,6 +16,7 @@
     "type": "git",
     "url": "https://github.com/jhuntdev/blest-angular"
   },
+  "homepage": "https://blest.jhunt.dev",
   "directories": {
     "example": "example"
   },
