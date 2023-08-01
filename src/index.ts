@@ -58,7 +58,7 @@ export class BlestService {
     this.queue.push([id, route, parameters || null, selector || null]);
 
     if (!this.timeout) {
-      this.timeout = window.setTimeout(this.processQueue, this.bufferDelay);
+      this.timeout = window.setTimeout(() => { this.processQueue() }, this.bufferDelay);
     }
   }
 
