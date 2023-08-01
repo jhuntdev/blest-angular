@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-interface BlestRequestState {
+export interface BlestRequestState {
   loading: boolean;
   error: any;
   data: any;
@@ -18,6 +18,8 @@ type BlestQueueItem = [string, string, any?, any?]
 
 interface BlestServiceConfig {
   url: string
+  maxBatchSize?: number
+  bufferDelay?: number
   headers?: any
 }
 
@@ -32,18 +34,18 @@ export class BlestService {
   private state$ = new BehaviorSubject<{ [id: string]: BlestRequestState }>({});
   private timeout: number | null = null;
   private url: string;
+  private maxBatchSize: number;
+  private bufferDelay: number;
   private headers: any;
 
   constructor(@Inject(BLEST_SERVICE_CONFIG) config: BlestServiceConfig) {
     this.url = config.url;
-    this.headers = config.headers;
+    this.maxBatchSize = config.maxBatchSize && typeof config.maxBatchSize === 'number' && config.maxBatchSize > 0 && Math.round(config.maxBatchSize) === config.maxBatchSize ? config.maxBatchSize : 25;
+    this.bufferDelay = config.bufferDelay && typeof config.bufferDelay === 'number' && config.bufferDelay > 0 && Math.round(config.bufferDelay) === config.bufferDelay ? config.bufferDelay : 10;
+    this.headers = config.headers && typeof config.headers === 'object' ? config.headers : {};
   }
 
   private enqueue(id: string, route: string, parameters: any, selector: any): void {
-    if (this.timeout) {
-      window.clearTimeout(this.timeout);
-    }
-
     const newState: BlestGlobalState = { ...this.state }
     newState[id] = {
       loading: false,
@@ -55,19 +57,28 @@ export class BlestService {
 
     this.queue.push([id, route, parameters || null, selector || null]);
 
-    this.timeout = window.setTimeout(() => {
-      this.processQueue();
-    }, 1);
+    if (!this.timeout) {
+      this.timeout = window.setTimeout(this.processQueue, this.bufferDelay);
+    }
   }
 
   private processQueue(): void {
-    if (this.queue.length > 0) {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+    if (!this.queue.length) {
+      return;
+    }
+    
+    const copyQueue: BlestQueueItem[] = this.queue.map((q: BlestQueueItem) => [...q])
+    this.queue = [];
 
-      const headers = this.headers && typeof this.headers === 'object' ? this.headers : {};
+    const batchCount = Math.ceil(copyQueue.length / this.maxBatchSize);
 
-      const myQueue = this.queue.map((q) => [...q]);
-      const requestIds = myQueue.map((q) => q[0]);
-      this.queue = [];
+    for (let i = 0; i < batchCount; i++) {
+      const myQueue = copyQueue.slice(i * this.maxBatchSize, (i + 1) * this.maxBatchSize);
+      const requestIds = myQueue.map((q: BlestQueueItem) => q[0]);
 
       const newState: BlestGlobalState = { ...this.state };
       for (let i = 0; i < requestIds.length; i++) {
@@ -86,7 +97,7 @@ export class BlestService {
         mode: 'cors',
         method: 'POST',
         headers: {
-          ...headers,
+          ...this.headers,
           'Content-Type': 'application/json',
           Accept: 'application/json'
         }
@@ -125,22 +136,24 @@ export class BlestService {
     const id = uuidv4();
     this.enqueue(id, route, parameters, selector);
     return this.state$.pipe(
-      map((state) => state[id]),
-      map((state) => state ? ({ ...state }) : { data: null, error: null, loading: false })
+      map((state: BlestGlobalState) => state[id]),
+      map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false })
     );
   }
 
-  command(route: string, selector?: any): [any, Observable<BlestRequestState>] {
+  lazyRequest(route: string, selector?: any): [any, Observable<BlestRequestState>] {
     let id: string = '';
     const execute = (parameters: any) => {
       id = uuidv4();
       this.enqueue(id, route, parameters, selector);
     }
     return [execute, this.state$.pipe(
-      map((state) => state[id]),
-      map((state) => state ? ({ ...state }) : { data: null, error: null, loading: false })
+      map((state: BlestGlobalState) => state[id]),
+      map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false })
     )];
   }
+
+  public command = this.lazyRequest;
 
   ngOnDestroy(): void {
     if (this.timeout) {

@@ -1,4 +1,4 @@
 <div>
-    <h3>["greet", {{'{'}}"name": "<input type="text" [(ngModel)]="name" name="name" (input)="updateName()" />"{{'}'}}]</h3>
+    <h3>["greet", {{'{'}}"name": "<input type="text" [(ngModel)]="name" name="name" (ngModelChange)="onNameChange()" />"{{'}'}}]</h3>
     <p>{{loading ? 'Loading...' : error ? 'Error: ' + error.message : data}}</p>
 </div>

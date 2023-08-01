@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { BlestService } from 'blest-angular';
+import { Component, Inject, ChangeDetectorRef } from '@angular/core';
+import { BlestService, BlestRequestState } from 'blest-angular';
 
 @Component({
   selector: 'app-component2',
@@ -14,20 +14,20 @@ export class Component2Component {
   error: any = null;
   loading: boolean = false;
 
-  constructor(private blestService: BlestService) {}
+  constructor(@Inject(BlestService) private blestService: BlestService) {}
 
-  updateName(): void {
+  onNameChange(): void {
     this.sendRequest()
   }
 
   sendRequest(): void {
     this.blestService.request('greet', { name: this.name }).subscribe({
-      next: (response) => {
+      next: (response: BlestRequestState) => {
         this.data = response.data ? JSON.stringify(response.data) : null;
         this.error = response.error;
         this.loading = response.loading;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error(error);
       }
     })

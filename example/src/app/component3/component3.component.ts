@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { BlestService } from 'blest-angular';
+import { Component, Inject } from '@angular/core';
+import { BlestService, BlestRequestState } from 'blest-angular';
 
 @Component({
   selector: 'app-component3',
@@ -12,17 +12,17 @@ export class Component3Component {
   error:any = null;
   loading:boolean = false;
 
-  constructor(private blestService: BlestService) {}
+  constructor(@Inject(BlestService) private blestService: BlestService) {}
 
   ngOnInit(): void {
 
     this.blestService.request('fail').subscribe({
-      next: (response) => {
+      next: (response: BlestRequestState) => {
         this.data = response.data ? JSON.stringify(response.data) : null;
         this.error = response.error;
         this.loading = response.loading;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error(error);
       }
     })
