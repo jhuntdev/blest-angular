@@ -21,7 +21,8 @@
     "lib": [
       "ES2018",
       "dom"
-    ]
+    ],
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src"

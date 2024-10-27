@@ -1,4 +1,4 @@
-import { Component, Inject, ChangeDetectorRef } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { BlestService, BlestRequestState } from 'blest-angular';
 
 @Component({
@@ -21,7 +21,7 @@ export class Component2Component {
   }
 
   sendRequest(): void {
-    this.blestService.request('greet', { name: this.name }).subscribe({
+    this.blestService.request('greet', { name: this.name }, { auth: 'myToken' }).subscribe({
       next: (response: BlestRequestState) => {
         this.data = response.data ? JSON.stringify(response.data) : null;
         this.error = response.error;

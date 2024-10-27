@@ -2,7 +2,8 @@
 import { Injectable, Inject, InjectionToken } from '@angular/core';
 import { v1 as uuid } from 'uuid';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { distinctUntilChanged, map } from 'rxjs/operators';
+import isEqual from 'lodash/isEqual';
 
 export interface BlestRequestState {
   loading: boolean;
@@ -48,7 +49,7 @@ export class BlestService {
   private enqueue(id: string, route: string, body: any, headers: any): void {
     const newState: BlestGlobalState = { ...this.state }
     newState[id] = {
-      loading: false,
+      loading: true,
       error: null,
       data: null
     };
@@ -80,17 +81,17 @@ export class BlestService {
       const myQueue = copyQueue.slice(i * this.maxBatchSize, (i + 1) * this.maxBatchSize);
       const requestIds = myQueue.map((q: BlestQueueItem) => q[0]);
 
-      const newState: BlestGlobalState = { ...this.state };
-      for (let i = 0; i < requestIds.length; i++) {
-        const id = requestIds[i];
-        newState[id] = {
-          loading: true,
-          error: null,
-          data: null
-        };
-      }
-      this.state = newState;
-      this.state$.next(newState);
+      // const newState: BlestGlobalState = { ...this.state };
+      // for (let i = 0; i < requestIds.length; i++) {
+      //   const id = requestIds[i];
+      //   newState[id] = {
+      //     loading: true,
+      //     error: null,
+      //     data: null
+      //   };
+      // }
+      // this.state = newState;
+      // this.state$.next(newState);
 
       fetch(this.url, {
         body: JSON.stringify(myQueue),
@@ -137,7 +138,8 @@ export class BlestService {
     this.enqueue(id, route, body, headers);
     return this.state$.pipe(
       map((state: BlestGlobalState) => state[id]),
-      map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false })
+      map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false }),
+      distinctUntilChanged(isEqual)
     );
   }
 
@@ -149,7 +151,8 @@ export class BlestService {
     }
     return [execute, this.state$.pipe(
       map((state: BlestGlobalState) => state[id]),
-      map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false })
+      map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false }),
+      distinctUntilChanged(isEqual)
     )];
   }
   
