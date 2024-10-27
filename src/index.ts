@@ -1,6 +1,6 @@
 
 import { Injectable, Inject, InjectionToken } from '@angular/core';
-import { v4 as uuidv4 } from 'uuid';
+import { v1 as uuid } from 'uuid';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -133,7 +133,7 @@ export class BlestService {
   }
 
   request(route: string, parameters?: any, selector?: any): Observable<BlestRequestState> {
-    const id = uuidv4();
+    const id = uuid();
     this.enqueue(id, route, parameters, selector);
     return this.state$.pipe(
       map((state: BlestGlobalState) => state[id]),
@@ -144,7 +144,7 @@ export class BlestService {
   lazyRequest(route: string, selector?: any): [any, Observable<BlestRequestState>] {
     let id: string = '';
     const execute = (parameters: any) => {
-      id = uuidv4();
+      id = uuid();
       this.enqueue(id, route, parameters, selector);
     }
     return [execute, this.state$.pipe(
