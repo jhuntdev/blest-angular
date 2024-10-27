@@ -22,7 +22,7 @@ import { Component4Component } from './component4/component4.component';
     BrowserModule
   ],
   providers: [
-    { provide: BlestService, useFactory: () => new BlestService({ url: 'http://localhost:8080', headers: { 'Authorization': 'Bearer token' } }) },
+    { provide: BlestService, useFactory: () => new BlestService({ url: 'http://localhost:8080', httpHeaders: { 'Authorization': 'Bearer token' } }) },
   ],
   bootstrap: [AppComponent]
 })

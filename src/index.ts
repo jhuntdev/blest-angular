@@ -20,7 +20,7 @@ interface BlestServiceConfig {
   url: string
   maxBatchSize?: number
   bufferDelay?: number
-  headers?: any
+  httpHeaders?: any
 }
 
 const BLEST_SERVICE_CONFIG = new InjectionToken<BlestServiceConfig>('blestServiceConfig');
@@ -36,16 +36,16 @@ export class BlestService {
   private url: string;
   private maxBatchSize: number;
   private bufferDelay: number;
-  private headers: any;
+  private httpHeaders: any;
 
   constructor(@Inject(BLEST_SERVICE_CONFIG) config: BlestServiceConfig) {
     this.url = config.url;
     this.maxBatchSize = config.maxBatchSize && typeof config.maxBatchSize === 'number' && config.maxBatchSize > 0 && Math.round(config.maxBatchSize) === config.maxBatchSize ? config.maxBatchSize : 25;
     this.bufferDelay = config.bufferDelay && typeof config.bufferDelay === 'number' && config.bufferDelay > 0 && Math.round(config.bufferDelay) === config.bufferDelay ? config.bufferDelay : 10;
-    this.headers = config.headers && typeof config.headers === 'object' ? config.headers : {};
+    this.httpHeaders = config.httpHeaders && typeof config.httpHeaders === 'object' ? config.httpHeaders : {};
   }
 
-  private enqueue(id: string, route: string, parameters: any, selector: any): void {
+  private enqueue(id: string, route: string, body: any, headers: any): void {
     const newState: BlestGlobalState = { ...this.state }
     newState[id] = {
       loading: false,
@@ -55,7 +55,7 @@ export class BlestService {
     this.state = newState;
     this.state$.next(newState);
 
-    this.queue.push([id, route, parameters || null, selector || null]);
+    this.queue.push([id, route, body || null, headers || null]);
 
     if (!this.timeout) {
       this.timeout = window.setTimeout(() => { this.processQueue() }, this.bufferDelay);
@@ -97,7 +97,7 @@ export class BlestService {
         mode: 'cors',
         method: 'POST',
         headers: {
-          ...this.headers,
+          ...this.httpHeaders,
           'Content-Type': 'application/json',
           Accept: 'application/json'
         }
@@ -132,29 +132,27 @@ export class BlestService {
     }
   }
 
-  request(route: string, parameters?: any, selector?: any): Observable<BlestRequestState> {
+  request(route: string, body?: any, headers?: any): Observable<BlestRequestState> {
     const id = uuid();
-    this.enqueue(id, route, parameters, selector);
+    this.enqueue(id, route, body, headers);
     return this.state$.pipe(
       map((state: BlestGlobalState) => state[id]),
       map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false })
     );
   }
 
-  lazyRequest(route: string, selector?: any): [any, Observable<BlestRequestState>] {
+  lazyRequest(route: string, headers?: any): [any, Observable<BlestRequestState>] {
     let id: string = '';
-    const execute = (parameters: any) => {
+    const execute = (body: any) => {
       id = uuid();
-      this.enqueue(id, route, parameters, selector);
+      this.enqueue(id, route, body, headers);
     }
     return [execute, this.state$.pipe(
       map((state: BlestGlobalState) => state[id]),
       map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false })
     )];
   }
-
-  public command = this.lazyRequest;
-
+  
   ngOnDestroy(): void {
     if (this.timeout) {
       window.clearTimeout(this.timeout);

@@ -16,7 +16,7 @@ export class Component1Component {
 
   ngOnInit(): void {
 
-    this.blestService.request('hello', null, ["hello"]).subscribe({
+    this.blestService.request('hello', null).subscribe({
       next: (response: BlestRequestState) => {
         this.data = response.data ? JSON.stringify(response.data) : null;
         this.error = response.error;
