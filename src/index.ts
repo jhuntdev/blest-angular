@@ -24,6 +24,17 @@ interface BlestServiceConfig {
   httpHeaders?: any
 }
 
+export type BlestSelector = Array<string | BlestSelector>
+
+export interface BlestRequestOptions {
+  skip?: boolean
+  select?: BlestSelector
+}
+
+export interface BlestLazyRequestOptions {
+  select?: BlestSelector
+}
+
 const BLEST_SERVICE_CONFIG = new InjectionToken<BlestServiceConfig>('blestServiceConfig');
 
 @Injectable({
@@ -133,9 +144,21 @@ export class BlestService {
     }
   }
 
-  request(route: string, body?: any, headers?: any): Observable<BlestRequestState> {
+  makeBlestHeaders = (options?: BlestRequestOptions|BlestLazyRequestOptions) => {
+    const headers:any = {}
+    if (!options) return headers;
+    if (options.select && Array.isArray(options.select)) {
+      headers._s = options.select
+    }
+    return headers
+  }
+
+  request(route: string, body?: any, options?: any): Observable<BlestRequestState> {
     const id = uuid();
-    this.enqueue(id, route, body, headers);
+    if (!options?.skip) {
+      const headers = this.makeBlestHeaders(options);
+      this.enqueue(id, route, body, headers);
+    }
     return this.state$.pipe(
       map((state: BlestGlobalState) => state[id]),
       map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false }),
@@ -143,8 +166,9 @@ export class BlestService {
     );
   }
 
-  lazyRequest(route: string, headers?: any): [any, Observable<BlestRequestState>] {
+  lazyRequest(route: string, options?: any): [any, Observable<BlestRequestState>] {
     let id: string = '';
+    const headers = this.makeBlestHeaders(options);
     const execute = (body: any) => {
       id = uuid();
       this.enqueue(id, route, body, headers);

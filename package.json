@@ -1,6 +1,6 @@
 {
   "name": "blest-angular",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An Angular client for BLEST (Batch-able, Lightweight, Encrypted State Transfer), an improved communication protocol for web APIs which leverages JSON, supports request batching by default, and provides a modern alternative to REST.",
   "keywords": [
     "blest",
@@ -17,9 +17,11 @@
     "url": "https://github.com/jhuntdev/blest-angular"
   },
   "homepage": "https://blest.jhunt.dev",
-  "directories": {
-    "example": "example"
-  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",

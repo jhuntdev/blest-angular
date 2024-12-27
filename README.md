@@ -74,7 +74,7 @@ export class ExampleComponent {
   constructor(private blestService: BlestService) {}
 
   ngOnInit(): void {
-    this.blestService.request('listItems', { limit: 24 }, ['data', ['pageInfo', ['endCursor', 'hasNextPage']]])
+    this.blestService.request('listItems', { limit: 24 }, { select: ['nodes', ['pageInfo', ['endCursor', 'hasNextPage']]] })
     .subscribe({
       next: (response) => {
         this.data = response.data;
