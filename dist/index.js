@@ -100,12 +100,17 @@ let BlestService = class BlestService {
         }
     }
     request(route, body, options) {
-        const id = uuid();
+        let id = uuid();
         if (!(options === null || options === void 0 ? void 0 : options.skip)) {
             const headers = this.makeBlestHeaders(options);
             this.enqueue(id, route, body, headers);
         }
-        return this.state$.pipe(map((state) => state[id]), map((state) => state ? (Object.assign({}, state)) : { data: null, error: null, loading: false }), distinctUntilChanged(isEqual));
+        const refresh = () => {
+            id = uuid();
+            const headers = this.makeBlestHeaders(options);
+            this.enqueue(id, route, body, headers);
+        };
+        return this.state$.pipe(map((state) => state[id]), map((state) => state ? (Object.assign(Object.assign({}, state), { refresh })) : { data: null, error: null, loading: false, refresh }), distinctUntilChanged(isEqual));
     }
     lazyRequest(route, options) {
         let id = '';

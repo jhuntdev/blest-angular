@@ -154,14 +154,19 @@ export class BlestService {
   }
 
   request(route: string, body?: any, options?: any): Observable<BlestRequestState> {
-    const id = uuid();
+    let id = uuid();
     if (!options?.skip) {
+      const headers = this.makeBlestHeaders(options);
+      this.enqueue(id, route, body, headers);
+    }
+    const refresh = () => {
+      id = uuid();
       const headers = this.makeBlestHeaders(options);
       this.enqueue(id, route, body, headers);
     }
     return this.state$.pipe(
       map((state: BlestGlobalState) => state[id]),
-      map((state: BlestRequestState) => state ? ({ ...state }) : { data: null, error: null, loading: false }),
+      map((state: BlestRequestState) => state ? ({ ...state, refresh }) : { data: null, error: null, loading: false, refresh }),
       distinctUntilChanged(isEqual)
     );
   }
